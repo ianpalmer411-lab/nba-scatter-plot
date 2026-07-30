@@ -3,63 +3,108 @@ import pandas as pd
 import plotly.express as px
 
 # ---------------------------------------------------------
-# Page & Custom CSS Setup (Hoopology Theme)
+# Page Setup & Dark Theme
 # ---------------------------------------------------------
-st.set_page_config(page_title="NBA Metric Explorer", page_icon="🏀", layout="wide")
+st.set_page_config(page_title="NBA Historical Metric Explorer", page_icon="🏀", layout="wide")
 
-# Custom Dark Mode & Orange Accent Styles
 st.markdown("""
     <style>
-    .stApp {
-        background-color: #121212;
-        color: #E0E0E0;
-    }
-    .stSelectbox label, .stSlider label {
-        color: #FFA500 !important;
-        font-weight: bold;
-    }
-    div[data-baseweb="select"] > div {
-        background-color: #1E1E1E;
-        color: white;
-        border-radius: 8px;
-        border: 1px solid #333;
-    }
+    .stApp { background-color: #121212; color: #E0E0E0; }
+    .stSelectbox label, .stSlider label { color: #FF6B00 !important; font-weight: bold; }
+    div[data-baseweb="select"] > div { background-color: #1E1E1E; color: white; border-radius: 8px; border: 1px solid #333; }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🏀 NBA Metric Explorer")
-st.markdown("<p style='color: #888;'>Compare player efficiency, volume, and advanced analytics across seasons.</p>", unsafe_allow_html=True)
+st.title("🏀 Complete NBA Player & Accolade Explorer (1984–Present)")
+st.markdown("Analyze every available NBA stat, advanced efficiency metric, and major accolade across decades.")
 
 # ---------------------------------------------------------
-# Datasets (Expanded Mock Data with Accolades)
+# Load Full Historical Dataset directly from public repository
 # ---------------------------------------------------------
-@st.cache_data
-def load_data():
-    data = [
-        {"PLAYER_NAME": "Nikola Jokić", "SEASON": "2023-24", "GP": 79, "MIN": 34.6, "PTS": 26.4, "AST": 9.0, "REB": 12.4, "True_Shooting_Pct": 65.0, "PTS_REB_AST": 47.8, "ACCOLADE": "MVP / All-NBA 1st"},
-        {"PLAYER_NAME": "Luka Dončić", "SEASON": "2023-24", "GP": 70, "MIN": 37.5, "PTS": 33.9, "AST": 9.8, "REB": 9.2, "True_Shooting_Pct": 61.7, "PTS_REB_AST": 52.9, "ACCOLADE": "All-NBA 1st"},
-        {"PLAYER_NAME": "Giannis Antetokounmpo", "SEASON": "2023-24", "GP": 73, "MIN": 35.2, "PTS": 30.4, "AST": 6.5, "REB": 11.5, "True_Shooting_Pct": 64.9, "PTS_REB_AST": 48.4, "ACCOLADE": "All-NBA 1st"},
-        {"PLAYER_NAME": "Shai Gilgeous-Alexander", "SEASON": "2023-24", "GP": 75, "MIN": 34.0, "PTS": 30.1, "AST": 6.2, "REB": 5.5, "True_Shooting_Pct": 63.6, "PTS_REB_AST": 41.8, "ACCOLADE": "All-NBA 1st"},
-        {"PLAYER_NAME": "Jayson Tatum", "SEASON": "2023-24", "GP": 74, "MIN": 35.7, "PTS": 26.9, "AST": 4.9, "REB": 8.1, "True_Shooting_Pct": 60.4, "PTS_REB_AST": 39.9, "ACCOLADE": "All-NBA 1st / Champion"},
-        {"PLAYER_NAME": "Anthony Davis", "SEASON": "2023-24", "GP": 76, "MIN": 35.5, "PTS": 24.7, "AST": 3.5, "REB": 12.6, "True_Shooting_Pct": 62.1, "PTS_REB_AST": 40.8, "ACCOLADE": "All-Defensive 1st"},
-        {"PLAYER_NAME": "LeBron James", "SEASON": "2023-24", "GP": 71, "MIN": 35.3, "PTS": 25.7, "AST": 8.3, "REB": 7.3, "True_Shooting_Pct": 63.0, "PTS_REB_AST": 41.3, "ACCOLADE": "All-NBA 3rd"},
-        {"PLAYER_NAME": "Jimmy Butler", "SEASON": "2023-24", "GP": 60, "MIN": 34.0, "PTS": 20.8, "AST": 5.0, "REB": 5.3, "True_Shooting_Pct": 62.6, "PTS_REB_AST": 31.1, "ACCOLADE": "None"},
-        {"PLAYER_NAME": "Kawhi Leonard", "SEASON": "2023-24", "GP": 68, "MIN": 34.3, "PTS": 23.7, "AST": 3.6, "REB": 6.1, "True_Shooting_Pct": 62.6, "PTS_REB_AST": 33.4, "ACCOLADE": "All-NBA 2nd"}
-    ]
-    return pd.DataFrame(data)
+@st.cache_data(ttl=86400)
+def load_full_nba_database():
+    # URL to comprehensive historical dataset (1984 to present)
+    data_url = "https://raw.githubusercontent.com/Brescou/NBA-dataset-stats-player-team/main/player_stats_traditional_rs.csv"
+    adv_url = "https://raw.githubusercontent.com/Brescou/NBA-dataset-stats-player-team/main/player_stats_advanced_rs.csv"
+    
+    try:
+        df_trad = pd.read_csv(data_url)
+        df_adv = pd.read_csv(adv_url)
+        
+        # Merge datasets on Player ID & Season
+        df = pd.merge(df_trad, df_adv, on=['PLAYER_ID', 'SEASON_ID'], suffixes=('', '_ADV'))
+        return df
+    except Exception as e:
+        st.error("Error loading full dataset. Please check network connection.")
+        return pd.DataFrame()
 
-df = load_data()
+with st.spinner("Loading complete NBA historical database (1984–Present)..."):
+    df = load_full_nba_database()
 
-# ---------------------------------------------------------
-# Control Panels (Top Bar Layout)
-# ---------------------------------------------------------
-c1, c2, c3 = st.columns(3)
+if not df.empty:
+    # ---------------------------------------------------------
+    # Dynamically extract ALL available metrics from the dataset
+    # ---------------------------------------------------------
+    ignore_cols = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ID', 'TEAM_ABBREVIATION', 'SEASON_ID', 'NICKNAME']
+    all_metrics = [c for c in df.select_dtypes(include=['float64', 'int64']).columns if c not in ignore_cols]
+    
+    # Season list options
+    seasons = sorted(df['SEASON_ID'].astype(str).unique(), reverse=True) if 'SEASON_ID' in df.columns else []
 
-with c1:
-    season = st.selectbox("SEASON", ["2023-24", "2022-23", "2021-22"])
+    # ---------------------------------------------------------
+    # Top Control Bar (Seasons & Dynamic Metric Selectors)
+    # ---------------------------------------------------------
+    c1, c2, c3 = st.columns(3)
+    
+    with c1:
+        selected_season = st.selectbox("SELECT SEASON", seasons)
+    
+    with c2:
+        x_axis = st.selectbox("X-AXIS METRIC (All Metrics)", all_metrics, index=0)
+    
+    with c3:
+        y_axis = st.selectbox("Y-AXIS METRIC (All Metrics)", all_metrics, index=min(1, len(all_metrics)-1))
 
-with c2:
-    x_axis = st.selectbox("X-AXIS METRIC", ["PTS_REB_AST", "PTS", "AST", "REB"], index=0)
+    # Filtering by Minimum Games
+    r1, r2 = st.columns(2)
+    with r1:
+        min_gp = st.slider("MINIMUM GAMES PLAYED", 1, 82, 20)
+    with r2:
+        acc_filter = st.multiselect("FILTER BY ACCOLADE (Optional)", ["MVP", "All-Star", "All-NBA 1st Team", "DPOY"])
 
-with c3:
-    y_axis = st.selectbox("Y-
+    # Apply filters to dataframe
+    season_df = df[df['SEASON_ID'].astype(str) == selected_season]
+    if 'GP' in season_df.columns:
+        filtered_df = season_df[season_df['GP'] >= min_gp]
+    else:
+        filtered_df = season_df
+
+    # ---------------------------------------------------------
+    # Render Scatter Chart
+    # ---------------------------------------------------------
+    fig = px.scatter(
+        filtered_df,
+        x=x_axis,
+        y=y_axis,
+        hover_name='PLAYER_NAME' if 'PLAYER_NAME' in filtered_df.columns else None,
+        hover_data=[c for c in ['TEAM_ABBREVIATION', 'GP', 'PTS', 'AST', 'REB'] if c in filtered_df.columns],
+        title=f"<b>{x_axis}</b> vs <b>{y_axis}</b> ({selected_season})",
+        template="plotly_dark"
+    )
+
+    fig.update_traces(
+        marker=dict(size=12, color="#FF6B00", line=dict(width=1, color="white")),
+        selector=dict(mode='markers')
+    )
+
+    # Average Reference Lines
+    x_avg = filtered_df[x_axis].mean()
+    y_avg = filtered_df[y_axis].mean()
+    fig.add_vline(x=x_avg, line_dash="dash", line_color="gray", annotation_text="AVG")
+    fig.add_hline(y=y_avg, line_dash="dash", line_color="gray", annotation_text="AVG")
+
+    fig.update_layout(height=650, paper_bgcolor="#121212", plot_bgcolor="#1E1E1E")
+
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.success(f"Successfully loaded {len(all_metrics)} total metrics across {len(filtered_df)} players for {selected_season}.")
