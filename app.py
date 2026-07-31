@@ -144,27 +144,37 @@ else:
         sort_col = y_axis if rank_by == "Y-Axis Metric" else x_axis
         df_filtered = df_filtered.nlargest(int(top_n_choice), sort_col)
 
-    # 5. Build Scatter Plot with Benchmark Lines & Vibrant Colored Circles
+    # 5. Build Scatter Plot with Benchmark Lines & Polished Hovercards
     if not df_filtered.empty:
+        # Prepare clean custom data arrays for the polished tooltip
+        t_series = df_filtered[team_col] if team_col in df_filtered.columns else pd.Series(['N/A'] * len(df_filtered))
+        g_series = df_filtered[games_col] if games_col and games_col in df_filtered.columns else pd.Series([0] * len(df_filtered))
+        s_series = df_filtered[season_col] if season_col in df_filtered.columns else pd.Series([selected_season] * len(df_filtered))
+
         fig = px.scatter(
             df_filtered,
             x=x_axis,
             y=y_axis,
             color=team_col if team_col else None,
             hover_name=player_col,
-            custom_data=[player_col],
-            hover_data={
-                x_axis: ':.2f',
-                y_axis: ':.2f',
-                team_col: True,
-                season_col: True,
-                games_col: True if games_col else False
-            },
+            custom_data=[t_series, g_series, s_series],
             title=f"<b>{format_col_name(y_axis)}</b> vs <b>{format_col_name(x_axis)}</b> ({selected_season})"
         )
 
-        # Style markers as vibrant colored circles
-        fig.update_traces(marker=dict(size=12, opacity=0.85, line=dict(width=1, color='rgba(255,255,255,0.4)')))
+        # Style markers as vibrant colored circles with smooth hover template
+        fig.update_traces(
+            marker=dict(size=12, opacity=0.85, line=dict(width=1, color='rgba(255,255,255,0.4)')),
+            hovertemplate=(
+                "<b>%{hovername}</b><br>"
+                "──────────────────────────<br>"
+                "<b>Team:</b> %{customdata[0]}<br>"
+                f"<b>{format_col_name(y_axis)}:</b> %{{y:.2f}}<br>"
+                f"<b>{format_col_name(x_axis)}:</b> %{{x:.2f}}<br>"
+                "<b>Games Played:</b> %{customdata[1]}<br>"
+                "<b>Season:</b> %{customdata[2]}<br>"
+                "<extra></extra>"
+            )
+        )
 
         # Calculate League Averages for Crosshair Benchmark Lines
         x_mean = df_filtered[x_axis].mean()
@@ -194,7 +204,13 @@ else:
             plot_bgcolor="rgba(15, 18, 25, 0.75)",
             xaxis_title=format_col_name(x_axis),
             yaxis_title=format_col_name(y_axis),
-            hoverlabel=dict(bgcolor="#1E293B", font_size=13, font_family="Inter", font_color="white"),
+            hoverlabel=dict(
+                bgcolor="#1E293B",
+                bordercolor="#3B82F6",
+                font_size=13,
+                font_family="Inter",
+                font_color="white"
+            ),
             margin=dict(l=30, r=30, t=60, b=30),
             font=dict(color="#F3F4F6", family="Inter"),
             showlegend=True
@@ -210,7 +226,7 @@ else:
         
         selected_player = None
         if chart_event and len(chart_event.selection["points"]) > 0:
-            selected_player = chart_event.selection["points"][0]["customdata"][0]
+            selected_player = chart_event.selection["points"][0]["hovertext"]
         else:
             selected_player = df_filtered[player_col].iloc[0]
 
