@@ -10,7 +10,6 @@ st.markdown("""
     .main-header { font-size: 2.2rem; font-weight: 800; color: #1D428A; margin-bottom: 0.2rem; }
     .sub-header { font-size: 1rem; color: #555555; margin-bottom: 1.5rem; }
     .stApp { background-color: #F8F9FA; }
-    /* Style the metric boxes to look like a sports card */
     div[data-testid="metric-container"] {
         background-color: #ffffff;
         border: 1px solid #e0e0e0;
@@ -53,7 +52,6 @@ else:
     # 3. Sidebar Configuration
     st.sidebar.header("🎯 Dashboard Filters")
     
-    # Season Filter
     if season_col:
         seasons_list = sorted(df[season_col].dropna().unique(), reverse=True)
         selected_season = st.sidebar.selectbox("Select Season", seasons_list)
@@ -61,13 +59,11 @@ else:
     else:
         df_filtered = df.copy()
 
-    # Games Played Filter 
     if games_col and games_col in df_filtered.columns:
         max_g = int(df_filtered[games_col].max()) if not df_filtered[games_col].empty else 82
         min_games = st.sidebar.slider("Minimum Games Played", min_value=1, max_value=max_g, value=15)
         df_filtered = df_filtered[df_filtered[games_col] >= min_games]
 
-    # Metric Extraction
     numeric_cols = df_filtered.select_dtypes(include=['float64', 'int64']).columns.tolist()
     ignore_cols = [season_col, 'player_id', 'hof', 'ht_in_in', 'wt']
     metric_options = [c for c in numeric_cols if c not in ignore_cols]
@@ -91,7 +87,6 @@ else:
     with col_y:
         y_axis = st.selectbox("Select Y-Axis Metric", metric_options, index=metric_options.index(default_y) if default_y in metric_options else 1, format_func=format_col_name)
 
-    # Filter Top N
     if top_n_choice != "Show All":
         sort_col = y_axis if rank_by == "Y-Axis Metric" else x_axis
         df_filtered = df_filtered.nlargest(int(top_n_choice), sort_col)
@@ -134,8 +129,7 @@ else:
 
         st.markdown("💡 **Click on any dot in the chart to load that player's specific headshot and bio!**")
         
-        # Catch the click event from the user
-        chart_event = st.plotly_chart(fig, use_container_width=True, on_select="rerun")
+        chart_event = st.plotly_chart(fig, width="stretch", on_select="rerun")
 
         # 6. Interactive Player Spotlight Card with Headshots & Full Stat Line
         st.markdown("---")
@@ -150,5 +144,53 @@ else:
         if selected_player:
             player_data = df_filtered[df_filtered[player_col] == selected_player].iloc[0]
             
-            # Layout: Image on left, Bio on right
-            p_col1, p_
+            p_col1, p_col2 = st.columns([1, 6])
+            
+            with p_col1:
+                if id_col and pd.notna(player_data[id_col]):
+                    pid = str(player_data[id_col])
+                    img_url = f"https://www.basketball-reference.com/req/202106291/images/headshots/{pid}.jpg"
+                    st.image(img_url, width=130)
+                else:
+                    st.info("No Photo")
+
+            with p_col2:
+                st.markdown(f"## {selected_player}")
+                
+                ht_in = player_data.get('ht_in_in', None)
+                height_str = f"{int(ht_in // 12)}'{int(ht_in % 12)}\"" if pd.notna(ht_in) else "N/A"
+                
+                wt_lbs = player_data.get('wt', None)
+                weight_str = f"{int(wt_lbs)} lbs" if pd.notna(wt_lbs) else "N/A"
+                
+                team_str = player_data.get(team_col, 'N/A')
+                szn_str = player_data.get(season_col, 'N/A')
+                gm_str = int(player_data.get(games_col, 0)) if pd.notna(player_data.get(games_col)) else 'N/A'
+
+                st.markdown(f"**Team:** {team_str} &nbsp;|&nbsp; **Season:** {szn_str} &nbsp;|&nbsp; **Games:** {gm_str}")
+                st.markdown(f"**Height:** {height_str} &nbsp;|&nbsp; **Weight:** {weight_str}")
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            def safe_stat(col, is_pct=False):
+                val = player_data.get(col, None)
+                if pd.isna(val): return "-"
+                if is_pct: return f"{val * 100:.1f}%"
+                return f"{val:.1f}"
+
+            m1, m2, m3, m4, m5, m6, m7, m8, m9 = st.columns(9)
+            m1.metric("PPG", safe_stat('pts_per_game'))
+            m2.metric("RPG", safe_stat('trb_per_game'))
+            m3.metric("APG", safe_stat('ast_per_game'))
+            m4.metric("SPG", safe_stat('stl_per_game'))
+            m5.metric("BPG", safe_stat('blk_per_game'))
+            m6.metric("MPG", safe_stat('mp_per_game'))
+            m7.metric("FG%", safe_stat('fg_percent', is_pct=True))
+            m8.metric("3P%", safe_stat('x3p_percent', is_pct=True))
+            m9.metric("FT%", safe_stat('ft_percent', is_pct=True))
+
+        with st.expander("📊 View Complete Data Table"):
+            st.dataframe(df_filtered, width="stretch")
+
+    else:
+        st.warning("No players found matching the current filters. Try lowering the Minimum Games Played filter.")
