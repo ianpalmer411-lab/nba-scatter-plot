@@ -144,9 +144,10 @@ else:
         sort_col = y_axis if rank_by == "Y-Axis Metric" else x_axis
         df_filtered = df_filtered.nlargest(int(top_n_choice), sort_col)
 
-    # 5. Build Scatter Plot with Benchmark Lines & Polished Hovercards
+    # 5. Build Scatter Plot with Benchmark Lines & Polished Professional Hovercard
     if not df_filtered.empty:
-        # Prepare clean custom data arrays for the polished tooltip
+        # Prepare explicit series for clean custom hover formatting
+        p_series = df_filtered[player_col] if player_col in df_filtered.columns else pd.Series(['Unknown'] * len(df_filtered))
         t_series = df_filtered[team_col] if team_col in df_filtered.columns else pd.Series(['N/A'] * len(df_filtered))
         g_series = df_filtered[games_col] if games_col and games_col in df_filtered.columns else pd.Series([0] * len(df_filtered))
         s_series = df_filtered[season_col] if season_col in df_filtered.columns else pd.Series([selected_season] * len(df_filtered))
@@ -156,22 +157,20 @@ else:
             x=x_axis,
             y=y_axis,
             color=team_col if team_col else None,
-            hover_name=player_col,
-            custom_data=[t_series, g_series, s_series],
+            custom_data=[p_series, t_series, g_series, s_series],
             title=f"<b>{format_col_name(y_axis)}</b> vs <b>{format_col_name(x_axis)}</b> ({selected_season})"
         )
 
-        # Style markers as vibrant colored circles with smooth hover template
+        # Style markers as vibrant colored circles with a polished, user-friendly hover template
         fig.update_traces(
             marker=dict(size=12, opacity=0.85, line=dict(width=1, color='rgba(255,255,255,0.4)')),
             hovertemplate=(
-                "<b>%{hovername}</b><br>"
-                "──────────────────────────<br>"
-                "<b>Team:</b> %{customdata[0]}<br>"
+                "<b style='font-size: 15px; color: #60A5FA;'>%{customdata[0]}</b><br>"
+                "<span style='color: #9CA3AF;'>Team: <b>%{customdata[1]}</b> | Season: %{customdata[3]}</span><br>"
+                "──────────────────────────────<br>"
                 f"<b>{format_col_name(y_axis)}:</b> %{{y:.2f}}<br>"
                 f"<b>{format_col_name(x_axis)}:</b> %{{x:.2f}}<br>"
-                "<b>Games Played:</b> %{customdata[1]}<br>"
-                "<b>Season:</b> %{customdata[2]}<br>"
+                "<b>Games Played:</b> %{customdata[2]}<br>"
                 "<extra></extra>"
             )
         )
@@ -226,7 +225,7 @@ else:
         
         selected_player = None
         if chart_event and len(chart_event.selection["points"]) > 0:
-            selected_player = chart_event.selection["points"][0]["hovertext"]
+            selected_player = chart_event.selection["points"][0]["customdata"][0]
         else:
             selected_player = df_filtered[player_col].iloc[0]
 
