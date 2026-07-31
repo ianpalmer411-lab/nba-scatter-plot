@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 
-# 1. Page Configuration & Modern App Styling (Spotify/Twitter Dark Theme Aesthetic)
+# 1. Page Configuration & Modern App Styling
 st.set_page_config(
     page_title="NBA Pulse • Analytics & Player Hub",
     layout="wide",
@@ -51,6 +51,54 @@ st.markdown("""
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
         margin-bottom: 20px;
     }
+    
+    /* Ultra-Modern Metric Selector Styling */
+    .selector-container {
+        background: linear-gradient(135deg, #16161A 0%, #1E1E24 100%);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        padding: 24px;
+        border-radius: 18px;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+        margin-bottom: 24px;
+    }
+    .selector-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #FFFFFF;
+        margin-bottom: 16px;
+        letter-spacing: -0.01em;
+    }
+
+    /* Custom Styling for Streamlit Selectboxes */
+    .stSelectbox label {
+        font-weight: 600 !important;
+        font-size: 0.8rem !important;
+        color: #94A3B8 !important;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    div[data-baseweb="select"] > div {
+        background-color: #121215 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 12px !important;
+        color: #F8FAFC !important;
+        min-height: 44px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    div[data-baseweb="select"] > div:hover {
+        border-color: #38BDF8 !important;
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        background-color: #16161A !important;
+    }
+    div[data-baseweb="select"] span {
+        color: #F8FAFC !important;
+        font-weight: 500;
+    }
+
     .spotlight-card {
         background: linear-gradient(145deg, #121216 0%, #1a1a22 100%);
         border: 1px solid rgba(56, 189, 248, 0.15);
@@ -108,12 +156,6 @@ st.markdown("""
     }
     [data-testid="stSidebar"] .block-container {
         padding-top: 2rem;
-    }
-
-    /* Input styling */
-    .stSelectbox div[data-baseweb="select"], .stSlider {
-        background-color: #141418;
-        border-radius: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -178,10 +220,10 @@ else:
 
     rank_by = st.sidebar.radio("Rank Top Players By:", ["Y-Axis Metric", "X-Axis Metric"]) if top_n_choice != "Show All" else None
 
-    # 4. Metric Selection Card
-    st.markdown('<div class="main-card">', unsafe_allow_html=True)
-    st.markdown("### 📊 Metric Matrix Selection")
-    col_x, col_y = st.columns(2, gap="medium")
+    # 4. Ultra-Modern Metric Selection Card
+    st.markdown('<div class="selector-container">', unsafe_allow_html=True)
+    st.markdown('<div class="selector-header">📊 Interactive Metric Matrix Selection</div>', unsafe_allow_html=True)
+    col_x, col_y = st.columns(2, gap="large")
     with col_x:
         x_axis = st.selectbox("X-Axis Parameter", metric_options, index=metric_options.index(default_x) if default_x in metric_options else 0, format_func=format_col_name)
     with col_y:
@@ -314,7 +356,7 @@ else:
                 
                 team_str = player_data.get(team_col, 'N/A')
                 szn_str = player_data.get(season_col, 'N/A')
-                gm_str = int(player_data.get(games_col, 0)) if pd.notna(player_data.get(games_col)) else 'N/A'
+                gm_str = int(player_data.get(games_log, 0) if 'games_log' in locals() else player_data.get(games_col, 0)) if pd.notna(player_data.get(games_col)) else 'N/A'
 
                 st.markdown(f"""
                     <div>
