@@ -97,7 +97,7 @@ else:
         sort_col = y_axis if rank_by == "Y-Axis Metric" else x_axis
         df_filtered = df_filtered.nlargest(int(top_n_choice), sort_col)
 
-    # 5. Build Clean Plotly Scatter Plot
+   # 5. Build Clean Plotly Scatter Plot
     if not df_filtered.empty:
         # Show text names directly on plot only when 25 or fewer points are displayed
         show_labels = True if (top_n_choice != "Show All" and int(top_n_choice) <= 25) else False
@@ -109,6 +109,7 @@ else:
             text=player_col if show_labels else None,
             color=team_col if team_col else None,
             hover_name=player_col,
+            custom_data=[player_col], # CRITICAL: This allows Streamlit to know exactly who you clicked
             hover_data={
                 x_axis: ':.2f',
                 y_axis: ':.2f',
@@ -119,7 +120,6 @@ else:
             title=f"<b>{format_col_name(y_axis)}</b> vs <b>{format_col_name(x_axis)}</b> ({selected_season})"
         )
 
-        # Style Plotly Markers & Layout
         fig.update_traces(
             textposition='top center',
             marker=dict(size=11, opacity=0.85, line=dict(width=1, color='white'))
@@ -134,16 +134,24 @@ else:
             margin=dict(l=20, r=20, t=50, b=20)
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.markdown("💡 **Click on any dot in the chart to load that player's specific headshot and bio!**")
+        
+        # Catch the click event from the user!
+        chart_event = st.plotly_chart(fig, use_container_width=True, on_select="rerun")
 
         # 6. Interactive Player Spotlight Card with Headshots
         st.markdown("---")
-        st.subheader("👤 Player Headshot & Bio Inspector")
+        st.subheader("👤 Player Spotlight")
         
-        selected_player = st.selectbox(
-            "Select a player to view headshot and bio:",
-            options=sorted(df_filtered[player_col].unique())
-        )
+        # Figure out who to show based on the click
+        selected_player = None
+        
+        # If the user clicked a dot, extract the player's name from the event data
+        if chart_event and len(chart_event.selection["points"]) > 0:
+            selected_player = chart_event.selection["points"][0]["customdata"][0]
+        else:
+            # Fallback: If nothing is clicked, just show the top player in the current filtered list
+            selected_player = df_filtered[player_col].iloc[0]
 
         if selected_player:
             player_data = df_filtered[df_filtered[player_col] == selected_player].iloc[0]
@@ -153,9 +161,8 @@ else:
             with p_col1:
                 if id_col and pd.notna(player_data[id_col]):
                     pid = str(player_data[id_col])
-                    # Official Basketball-Reference Headshot CDN
                     img_url = f"https://www.basketball-reference.com/req/202106291/images/headshots/{pid}.jpg"
-                    st.image(img_url, width=150, caption=selected_player)
+                    st.image(img_url, width=150)
                 else:
                     st.info("No Photo Available")
 
