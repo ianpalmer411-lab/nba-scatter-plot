@@ -3,82 +3,84 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 
-# 1. Page Configuration & Professional Sports Theme
-st.set_page_config(
-    page_title="Pro NBA Analytics Dashboard",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# 1. Page Config & Custom Theme
+st.set_page_config(page_title="Pro NBA Analytics", layout="wide", initial_sidebar_state="expanded")
 
+# Stunning Custom CSS for a professional sports analytics look
 st.markdown("""
     <style>
-    /* Global Theme */
     .stApp {
-        background-color: #12141C;
+        background-color: #0B0E14;
         color: #F3F4F6;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'Inter', -apple-system, sans-serif;
     }
-    
-    /* Header Styling */
-    .main-title {
-        font-size: 2.4rem;
-        font-weight: 800;
-        background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #8B5CF6 100%);
+    .main-header {
+        font-size: 2.6rem;
+        font-weight: 900;
+        background: linear-gradient(90deg, #60A5FA, #3B82F6, #8B5CF6);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        margin-bottom: 0rem;
         letter-spacing: -0.5px;
-        margin-bottom: 0px;
     }
-    .sub-title {
-        font-size: 0.95rem;
+    .sub-header {
+        font-size: 1rem;
         color: #9CA3AF;
         margin-bottom: 1.5rem;
     }
-
-    /* Glassmorphism Containers */
-    .glass-card {
-        background: rgba(20, 24, 33, 0.85);
-        backdrop-filter: blur(16px);
+    /* Modern Glassmorphism Cards */
+    .dashboard-card {
+        background: rgba(22, 27, 34, 0.75);
+        backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        padding: 22px;
+        padding: 24px;
         border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         margin-bottom: 20px;
     }
-
-    /* Metric Box Styling */
+    /* Custom metric styling */
     div[data-testid="metric-container"] {
-        background: rgba(28, 35, 49, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        padding: 14px;
+        background: rgba(31, 41, 55, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 12px;
         border-radius: 12px;
         text-align: center;
+        transition: transform 0.2s ease;
+    }
+    div[data-testid="metric-container"]:hover {
+        transform: translateY(-2px);
+        border-color: rgba(59, 130, 246, 0.4);
     }
     div[data-testid="metric-container"] label {
         color: #9CA3AF !important;
         font-weight: 600;
-        font-size: 0.8rem !important;
+        font-size: 0.85rem !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
     div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
         color: #F9FAFB !important;
         font-weight: 800;
-        font-size: 1.35rem !important;
+        font-size: 1.4rem !important;
     }
-
-    /* Sidebar Tweaks */
+    /* Sidebar polish */
     [data-testid="stSidebar"] {
-        background-color: #0A0C10;
-        border-right: 1px solid rgba(255, 255, 255, 0.04);
+        background-color: #0E131F;
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    /* Style selectboxes and sliders */
+    .stSelectbox div[data-baseweb="select"] {
+        background-color: #1F2937;
+        border-color: #374151;
+        border-radius: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-title">🏀 Pro NBA Analytics Hub</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">Advanced player performance mapping with visual reference benchmarks and deep metrics.</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🏀 Pro NBA Analytics Hub</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Advanced historical explorer with interactive player headshots and split metrics.</div>', unsafe_allow_html=True)
 
-# 2. Data Loader with Caching
+# 2. Data Loader
 @st.cache_data
 def load_data():
     for path in ['nba_master_stats.csv', 'data/nba_master_stats.csv']:
@@ -91,7 +93,7 @@ def load_data():
 df = load_data()
 
 if df is None:
-    st.error("⚠️ `nba_master_stats.csv` not found. Please ensure your dataset is properly uploaded.")
+    st.error("⚠️ `nba_master_stats.csv` not found. Please verify it is uploaded to your repository.")
 else:
     season_col = 'SEASON' if 'SEASON' in df.columns else ('season' if 'season' in df.columns else None)
     player_col = 'PLAYER_NAME' if 'PLAYER_NAME' in df.columns else ('player' if 'player' in df.columns else None)
@@ -102,7 +104,7 @@ else:
     def format_col_name(col):
         return col.replace('_', ' ').title().replace('Pts', 'Points').replace('Ast', 'Assists').replace('Trb', 'Rebounds')
 
-    # 3. Sidebar Configuration Controls
+    # 3. Sidebar Controls
     st.sidebar.header("🎯 Dashboard Controls")
     
     if season_col:
@@ -114,7 +116,7 @@ else:
 
     if games_col and games_col in df_filtered.columns:
         max_g = int(df_filtered[games_col].max()) if not df_filtered[games_col].empty else 82
-        min_games = st.sidebar.slider("🛡️ Minimum Games Played", min_value=1, max_value=max_g, value=20)
+        min_games = st.sidebar.slider("🛡️ Minimum Games Played", min_value=1, max_value=max_g, value=15)
         df_filtered = df_filtered[df_filtered[games_col] >= min_games]
 
     numeric_cols = df_filtered.select_dtypes(include=['float64', 'int64']).columns.tolist()
@@ -128,23 +130,26 @@ else:
     st.sidebar.subheader("🏆 Leaderboard Cutoff")
     top_n_choice = st.sidebar.selectbox("Show Top N Players", ["Show All", 10, 15, 20, 30, 50, 100], index=3)
 
-    rank_by = st.sidebar.radio("Rank Top Players By:", ["Y-Axis Metric", "X-Axis Metric"]) if top_n_choice != "Show All" else None
+    if top_n_choice != "Show All":
+        rank_by = st.sidebar.radio("Rank Top Players By:", ["Y-Axis Metric", "X-Axis Metric"])
+    else:
+        rank_by = None
 
-    # 4. Metric Selection Panel
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    # 4. Organized Metric Selection Panel
+    st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
     st.markdown("### 🎛️ Chart Metric Selection")
     col_x, col_y = st.columns(2)
     with col_x:
-        x_axis = st.selectbox("X-Axis Metric", metric_options, index=metric_options.index(default_x) if default_x in metric_options else 0, format_func=format_col_name)
+        x_axis = st.selectbox("Select X-Axis Metric", metric_options, index=metric_options.index(default_x) if default_x in metric_options else 0, format_func=format_col_name)
     with col_y:
-        y_axis = st.selectbox("Y-Axis Metric", metric_options, index=metric_options.index(default_y) if default_y in metric_options else 1, format_func=format_col_name)
+        y_axis = st.selectbox("Select Y-Axis Metric", metric_options, index=metric_options.index(default_y) if default_y in metric_options else 1, format_func=format_col_name)
     st.markdown('</div>', unsafe_allow_html=True)
 
     if top_n_choice != "Show All":
         sort_col = y_axis if rank_by == "Y-Axis Metric" else x_axis
         df_filtered = df_filtered.nlargest(int(top_n_choice), sort_col)
 
-    # 5. Build Scatter Plot with Benchmark Lines and Headshots
+    # 5. Build Scatter Plot with Headshots
     if not df_filtered.empty:
         fig = px.scatter(
             df_filtered,
@@ -163,36 +168,13 @@ else:
             title=f"<b>{format_col_name(y_axis)}</b> vs <b>{format_col_name(x_axis)}</b> ({selected_season})"
         )
 
-        fig.update_traces(marker=dict(size=8, opacity=0.15))
+        fig.update_traces(marker=dict(size=6, opacity=0.25))
 
-        # Calculate League Averages for Crosshair Benchmark Lines
-        x_mean = df_filtered[x_axis].mean()
-        y_mean = df_filtered[y_axis].mean()
-
-        # Add League Average Benchmark Lines (Dashed Crosshairs)
-        fig.add_vline(
-            x=x_mean, 
-            line_dash="dash", 
-            line_color="rgba(255, 255, 255, 0.3)", 
-            annotation_text="Avg", 
-            annotation_position="top",
-            annotation_font_color="#9CA3AF"
-        )
-        fig.add_hline(
-            y=y_mean, 
-            line_dash="dash", 
-            line_color="rgba(255, 255, 255, 0.3)", 
-            annotation_text="Avg", 
-            annotation_position="right",
-            annotation_font_color="#9CA3AF"
-        )
-
-        # Add Headshots onto Chart Coordinates
         if id_col:
             x_range = df_filtered[x_axis].max() - df_filtered[x_axis].min()
             y_range = df_filtered[y_axis].max() - df_filtered[y_axis].min()
-            sizex = x_range * 0.055 if x_range > 0 else 1.0
-            sizey = y_range * 0.055 if y_range > 0 else 1.0
+            sizex = x_range * 0.05 if x_range > 0 else 1.0
+            sizey = y_range * 0.05 if y_range > 0 else 1.0
 
             for _, row in df_filtered.iterrows():
                 if pd.notna(row.get(id_col)):
@@ -212,25 +194,25 @@ else:
                     )
 
         fig.update_layout(
-            height=720,
+            height=700,
             template="plotly_dark",
             paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(15, 18, 25, 0.75)",
+            plot_bgcolor="rgba(11, 14, 20, 0.6)",
             xaxis_title=format_col_name(x_axis),
             yaxis_title=format_col_name(y_axis),
-            hoverlabel=dict(bgcolor="#1E293B", font_size=13, font_family="Inter", font_color="white"),
-            margin=dict(l=30, r=30, t=60, b=30),
+            hoverlabel=dict(bgcolor="#1F2937", font_size=13, font_family="Inter", font_color="white"),
+            margin=dict(l=20, r=20, t=50, b=20),
             font=dict(color="#F3F4F6", family="Inter"),
             showlegend=False
         )
 
-        st.markdown("💡 *Interactive Tip: Click on any player node/headshot on the graph to inspect their comprehensive scouting profile below!*")
+        st.markdown("💡 *Tip: Click on any player's headshot on the scatter plot to instantly inspect their complete profile below!*")
         
         chart_event = st.plotly_chart(fig, width="stretch", on_select="rerun")
 
         # 6. Premium Player Spotlight Card
         st.markdown("---")
-        st.markdown("### 👤 Player Scouting Spotlight Card")
+        st.markdown("### 👤 Player Spotlight & Performance Breakdown")
         
         selected_player = None
         if chart_event and len(chart_event.selection["points"]) > 0:
@@ -241,20 +223,20 @@ else:
         if selected_player:
             player_data = df_filtered[df_filtered[player_col] == selected_player].iloc[0]
             
-            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
             
-            p_col1, p_col2 = st.columns([1, 5], gap="large")
+            col_img, col_bio = st.columns([1, 5], gap="large")
             
-            with p_col1:
+            with col_img:
                 if id_col and pd.notna(player_data[id_col]):
                     pid = str(player_data[id_col])
                     img_url = f"https://www.basketball-reference.com/req/202106291/images/headshots/{pid}.jpg"
-                    st.image(img_url, width=150)
+                    st.image(img_url, width=140)
                 else:
-                    st.info("No Photo Available")
+                    st.info("No Photo")
 
-            with p_col2:
-                st.markdown(## **{selected_player}**")
+            with col_bio:
+                st.markdown(f"## **{selected_player}**")
                 
                 ht_in = player_data.get('ht_in_in', None)
                 height_str = f"{int(ht_in // 12)}'{int(ht_in % 12)}\"" if pd.notna(ht_in) else "N/A"
@@ -272,7 +254,7 @@ else:
                 b4.markdown(f"**Height / Weight:** `{height_str} / {weight_str}`")
 
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("#### 📊 Per-Game Box Score & Shooting Splitting Efficiency")
+            st.markdown("#### 📊 Box Score & Shooting Splits")
 
             def safe_stat(col, is_pct=False):
                 val = player_data.get(col, None)
@@ -282,4 +264,19 @@ else:
 
             s1, s2, s3, s4, s5, s6, s7, s8, s9 = st.columns(9)
             s1.metric("PPG", safe_stat('pts_per_game'))
-            s2
+            s2.metric("RPG", safe_stat('trb_per_game'))
+            s3.metric("APG", safe_stat('ast_per_game'))
+            s4.metric("SPG", safe_stat('stl_per_game'))
+            s5.metric("BPG", safe_stat('blk_per_game'))
+            s6.metric("MPG", safe_stat('mp_per_game'))
+            s7.metric("FG%", safe_stat('fg_percent', is_pct=True))
+            s8.metric("3P%", safe_stat('x3p_percent', is_pct=True))
+            s9.metric("FT%", safe_stat('ft_percent', is_pct=True))
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with st.expander("📊 View Complete Filtered Data Table"):
+            st.dataframe(df_filtered, width="stretch")
+
+    else:
+        st.warning("No players found matching the current filters. Try lowering the Minimum Games Played filter.")
