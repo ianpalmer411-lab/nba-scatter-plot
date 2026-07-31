@@ -2,26 +2,11 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 
-# 1. Page Config & CSS Theme
+# 1. Page Config
 st.set_page_config(page_title="NBA Player Analytics", layout="wide", initial_sidebar_state="expanded")
 
-st.markdown("""
-    <style>
-    .main-header { font-size: 2.2rem; font-weight: 800; color: #1D428A; margin-bottom: 0.2rem; }
-    .sub-header { font-size: 1rem; color: #555555; margin-bottom: 1.5rem; }
-    .stApp { background-color: #F8F9FA; }
-    div[data-testid="metric-container"] {
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        padding: 10px;
-        border-radius: 8px;
-        box-shadow: 1px 1px 3px rgba(0,0,0,0.05);
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="main-header">🏀 NBA Player Stats & Historical Explorer</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Interactively filter, compare metrics, and inspect player performance across eras.</div>', unsafe_allow_html=True)
+st.title("🏀 NBA Player Stats & Historical Explorer")
+st.markdown("Interactively filter, compare metrics, and inspect player performance across eras.")
 
 # 2. Data Loader
 @st.cache_data
