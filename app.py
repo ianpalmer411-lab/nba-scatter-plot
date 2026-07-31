@@ -42,7 +42,7 @@ st.markdown("""
         font-weight: 400;
     }
 
-    /* Sleek Card Containers (Spotify/Twitter Card Style) */
+    /* Sleek Card Containers */
     .main-card {
         background: #121214;
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -74,7 +74,7 @@ st.markdown("""
         margin-bottom: 6px;
     }
 
-    /* Metric Grid Boxes (Modern App Style) */
+    /* Metric Grid Boxes */
     div[data-testid="metric-container"] {
         background: #18181C;
         border: 1px solid rgba(255, 255, 255, 0.06);
@@ -208,7 +208,6 @@ else:
             title=f"<b>{format_col_name(y_axis)}</b> vs <b>{format_col_name(x_axis)}</b> ({selected_season})"
         )
 
-        # Crisp, modern circular points with refined hover cards (Spotify/Twitter dark popup style)
         fig.update_traces(
             marker=dict(size=12, opacity=0.9, line=dict(width=1.5, color='rgba(255,255,255,0.6)')),
             hovertemplate=(
@@ -222,7 +221,6 @@ else:
             )
         )
 
-        # League Average Benchmark Crosshairs
         x_mean = df_filtered[x_axis].mean()
         y_mean = df_filtered[y_axis].mean()
 
@@ -273,7 +271,7 @@ else:
         
         chart_event = st.plotly_chart(fig, width="stretch", on_select="rerun")
 
-        # 6. Modern Player Spotlight Dossier (Spotify/YouTube Profile Card Style)
+        # 6. Modern Player Scouting Dossier
         st.markdown("---")
         st.markdown("### 👤 Player Scouting Dossier")
         
