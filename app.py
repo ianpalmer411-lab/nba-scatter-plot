@@ -10,12 +10,13 @@ st.markdown("""
     .main-header { font-size: 2.2rem; font-weight: 800; color: #1D428A; margin-bottom: 0.2rem; }
     .sub-header { font-size: 1rem; color: #555555; margin-bottom: 1.5rem; }
     .stApp { background-color: #F8F9FA; }
-    .metric-card {
-        background-color: #FFFFFF;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        border: 1px solid #E2E8F0;
+    /* Style the metric boxes to look like a sports card */
+    div[data-testid="metric-container"] {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 1px 1px 3px rgba(0,0,0,0.05);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -38,7 +39,7 @@ df = load_data()
 if df is None:
     st.error("⚠️ `nba_master_stats.csv` not found. Please verify it is uploaded to your repository.")
 else:
-    # Standardize Column Column Identifiers
+    # Standardize Column Identifiers
     season_col = 'SEASON' if 'SEASON' in df.columns else ('season' if 'season' in df.columns else None)
     player_col = 'PLAYER_NAME' if 'PLAYER_NAME' in df.columns else ('player' if 'player' in df.columns else None)
     team_col = 'team' if 'team' in df.columns else ('TEAM' if 'TEAM' in df.columns else None)
@@ -60,7 +61,7 @@ else:
     else:
         df_filtered = df.copy()
 
-    # Games Played Filter (Prevents small sample size outliers)
+    # Games Played Filter 
     if games_col and games_col in df_filtered.columns:
         max_g = int(df_filtered[games_col].max()) if not df_filtered[games_col].empty else 82
         min_games = st.sidebar.slider("Minimum Games Played", min_value=1, max_value=max_g, value=15)
@@ -68,8 +69,6 @@ else:
 
     # Metric Extraction
     numeric_cols = df_filtered.select_dtypes(include=['float64', 'int64']).columns.tolist()
-    
-    # Exclude IDs/Seasons from metric pickers
     ignore_cols = [season_col, 'player_id', 'hof', 'ht_in_in', 'wt']
     metric_options = [c for c in numeric_cols if c not in ignore_cols]
 
@@ -97,9 +96,8 @@ else:
         sort_col = y_axis if rank_by == "Y-Axis Metric" else x_axis
         df_filtered = df_filtered.nlargest(int(top_n_choice), sort_col)
 
-   # 5. Build Clean Plotly Scatter Plot
+    # 5. Build Clean Plotly Scatter Plot
     if not df_filtered.empty:
-        # Show text names directly on plot only when 25 or fewer points are displayed
         show_labels = True if (top_n_choice != "Show All" and int(top_n_choice) <= 25) else False
 
         fig = px.scatter(
@@ -109,7 +107,7 @@ else:
             text=player_col if show_labels else None,
             color=team_col if team_col else None,
             hover_name=player_col,
-            custom_data=[player_col], # CRITICAL: This allows Streamlit to know exactly who you clicked
+            custom_data=[player_col], 
             hover_data={
                 x_axis: ':.2f',
                 y_axis: ':.2f',
@@ -136,51 +134,21 @@ else:
 
         st.markdown("💡 **Click on any dot in the chart to load that player's specific headshot and bio!**")
         
-        # Catch the click event from the user!
+        # Catch the click event from the user
         chart_event = st.plotly_chart(fig, use_container_width=True, on_select="rerun")
 
-        # 6. Interactive Player Spotlight Card with Headshots
+        # 6. Interactive Player Spotlight Card with Headshots & Full Stat Line
         st.markdown("---")
         st.subheader("👤 Player Spotlight")
         
-        # Figure out who to show based on the click
         selected_player = None
-        
-        # If the user clicked a dot, extract the player's name from the event data
         if chart_event and len(chart_event.selection["points"]) > 0:
             selected_player = chart_event.selection["points"][0]["customdata"][0]
         else:
-            # Fallback: If nothing is clicked, just show the top player in the current filtered list
             selected_player = df_filtered[player_col].iloc[0]
 
         if selected_player:
             player_data = df_filtered[df_filtered[player_col] == selected_player].iloc[0]
             
-            p_col1, p_col2, p_col3 = st.columns([1, 2, 2])
-            
-            with p_col1:
-                if id_col and pd.notna(player_data[id_col]):
-                    pid = str(player_data[id_col])
-                    img_url = f"https://www.basketball-reference.com/req/202106291/images/headshots/{pid}.jpg"
-                    st.image(img_url, width=150)
-                else:
-                    st.info("No Photo Available")
-
-            with p_col2:
-                st.markdown(f"### {selected_player}")
-                st.markdown(f"**Team:** {player_data.get(team_col, 'N/A')}")
-                st.markdown(f"**Season:** {player_data.get(season_col, 'N/A')}")
-                if games_col in player_data:
-                    st.markdown(f"**Games Played:** {int(player_data[games_col])}")
-
-            with p_col3:
-                st.markdown("#### Selected Metrics")
-                st.metric(label=format_col_name(x_axis), value=f"{player_data[x_axis]:,.2f}")
-                st.metric(label=format_col_name(y_axis), value=f"{player_data[y_axis]:,.2f}")
-
-        # Raw Data Expander
-        with st.expander("📊 View Complete Data Table"):
-            st.dataframe(df_filtered, use_container_width=True)
-
-    else:
-        st.warning("No players found matching the current filters. Try lowering the Minimum Games Played filter.")
+            # Layout: Image on left, Bio on right
+            p_col1, p_
