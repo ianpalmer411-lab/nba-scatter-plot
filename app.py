@@ -5,8 +5,54 @@ import plotly.express as px
 # 1. Page Config
 st.set_page_config(page_title="NBA Player Analytics", layout="wide", initial_sidebar_state="expanded")
 
-st.title("🏀 NBA Player Stats & Historical Explorer")
-st.markdown("Interactively filter, compare metrics, and inspect player performance across eras.")
+# Custom CSS for a sleek dark sports analytics theme with high contrast visible text
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0E1117;
+        color: #FAFAFA;
+    }
+    .main-header {
+        font-size: 2.4rem;
+        font-weight: 800;
+        color: #60A5FA;
+        margin-bottom: 0.1rem;
+        letter-spacing: -0.5px;
+    }
+    .sub-header {
+        font-size: 1rem;
+        color: #9CA3AF;
+        margin-bottom: 1.5rem;
+    }
+    /* Style metric cards for dark mode */
+    div[data-testid="metric-container"] {
+        background-color: #1F2937;
+        border: 1px solid #374151;
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+    div[data-testid="metric-container"] label {
+        color: #9CA3AF !important;
+        font-weight: 600;
+    }
+    div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
+        color: #F9FAFB !important;
+        font-weight: 700;
+    }
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background-color: #111827;
+        border-right: 1px solid #1F2937;
+    }
+    [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] label {
+        color: #E5E7EB !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown('<div class="main-header">🏀 NBA Player Stats & Historical Explorer</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Interactively filter, compare metrics, and inspect player performance across eras.</div>', unsafe_allow_html=True)
 
 # 2. Data Loader
 @st.cache_data
@@ -30,7 +76,6 @@ else:
     id_col = 'player_id' if 'player_id' in df.columns else None
     games_col = 'g' if 'g' in df.columns else ('G' if 'G' in df.columns else None)
 
-    # Clean Name Helper for Dropdowns
     def format_col_name(col):
         return col.replace('_', ' ').title().replace('Pts', 'Points').replace('Ast', 'Assists').replace('Trb', 'Rebounds')
 
@@ -76,7 +121,7 @@ else:
         sort_col = y_axis if rank_by == "Y-Axis Metric" else x_axis
         df_filtered = df_filtered.nlargest(int(top_n_choice), sort_col)
 
-    # 5. Build Clean Plotly Scatter Plot
+    # 5. Build Clean Plotly Scatter Plot (Dark Theme Template)
     if not df_filtered.empty:
         show_labels = True if (top_n_choice != "Show All" and int(top_n_choice) <= 25) else False
 
@@ -100,16 +145,19 @@ else:
 
         fig.update_traces(
             textposition='top center',
-            marker=dict(size=11, opacity=0.85, line=dict(width=1, color='white'))
+            marker=dict(size=12, opacity=0.9, line=dict(width=1, color='#1F2937'))
         )
 
         fig.update_layout(
             height=650,
-            template="plotly_white",
+            template="plotly_dark",
+            paper_bgcolor="#0E1117",
+            plot_bgcolor="#111827",
             xaxis_title=format_col_name(x_axis),
             yaxis_title=format_col_name(y_axis),
-            hoverlabel=dict(bgcolor="white", font_size=13, font_family="Arial"),
-            margin=dict(l=20, r=20, t=50, b=20)
+            hoverlabel=dict(bgcolor="#1F2937", font_size=13, font_family="Arial", font_color="white"),
+            margin=dict(l=20, r=20, t=50, b=20),
+            font=dict(color="#F3F4F6")
         )
 
         st.markdown("💡 **Click on any dot in the chart to load that player's specific headshot and bio!**")
